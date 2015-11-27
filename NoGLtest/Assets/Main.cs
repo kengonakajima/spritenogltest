@@ -25,10 +25,13 @@ public class Main : MonoBehaviour {
         if(j) {
             for(int i=0;i<100;i++) {
                 Vector2 at = new Vector2( Random.Range(-3f,3f), Random.Range(-3f,3f) );
-                if( Random.Range(0f,1f) < 0.5 ) {
+                float r = Random.Range(0f,1f);
+                if( r < 0.4 ) {
                     addSprite1(at);
-                } else {
+                } else if( r < 0.95 ) {
                     addSprite2(at);
+                } else {
+                    addGrid(at);
                 }
             }
             cur_num+=100;
@@ -70,29 +73,8 @@ public class Main : MonoBehaviour {
         //        o.transform.Translate(0,-0.5f,0);
         o.transform.localScale = new Vector3(2,2,1);        
 	}
-
-    void makeGrid() {
-        Mesh mesh = GetComponent<MeshFilter>().mesh;
-        Vector3[] vertices = new Vector3[4];
-        Vector2[] uv = new Vector2[4];
-        int[] triangles = new int[3];
-
-
-        vertices[0] = new Vector3(0,0,0);
-        vertices[1] = new Vector3(0,1,0);
-        vertices[2] = new Vector3(1,1,0);
-        vertices[3] = new Vector3(1,0,0);
-        uv[0] = new Vector2(0,0);
-        uv[1] = new Vector2(0,1);
-        uv[2] = new Vector2(1,1);
-        uv[3] = new Vector2(1,0);
-        triangles[0] = 0;
-        triangles[1] = 1;
-        triangles[2] = 2;
-
-        mesh.vertices = vertices;
-        mesh.uv = uv;
-        mesh.triangles = triangles;
-        mesh.RecalculateNormals();
+    void addGrid(Vector2 at ) {
+        GameObject prefab = Resources.Load<GameObject>( "Cube" ) as GameObject;
+        Instantiate( prefab, new Vector3(at.x,at.y,0), Quaternion.identity );
     }
 }
