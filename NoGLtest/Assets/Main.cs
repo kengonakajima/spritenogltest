@@ -38,7 +38,7 @@ public class Main : MonoBehaviour {
         if( show_fps_at < nt - 1 ) {
             show_fps_at = nt;
             Text t = GameObject.FindWithTag("FPStext").GetComponent<Text>() as Text;
-            t.text = "fps:" + cur_frame + " num:" + cur_num;
+            t.text = "fps:" + cur_frame + " num:" + cur_num + " Touch/Click to add sprites";
             cur_frame = 0;
         }
         cur_frame ++;
@@ -70,4 +70,29 @@ public class Main : MonoBehaviour {
         //        o.transform.Translate(0,-0.5f,0);
         o.transform.localScale = new Vector3(2,2,1);        
 	}
+
+    void makeGrid() {
+        Mesh mesh = GetComponent<MeshFilter>().mesh;
+        Vector3[] vertices = new Vector3[4];
+        Vector2[] uv = new Vector2[4];
+        int[] triangles = new int[3];
+
+
+        vertices[0] = new Vector3(0,0,0);
+        vertices[1] = new Vector3(0,1,0);
+        vertices[2] = new Vector3(1,1,0);
+        vertices[3] = new Vector3(1,0,0);
+        uv[0] = new Vector2(0,0);
+        uv[1] = new Vector2(0,1);
+        uv[2] = new Vector2(1,1);
+        uv[3] = new Vector2(1,0);
+        triangles[0] = 0;
+        triangles[1] = 1;
+        triangles[2] = 2;
+
+        mesh.vertices = vertices;
+        mesh.uv = uv;
+        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
+    }
 }
