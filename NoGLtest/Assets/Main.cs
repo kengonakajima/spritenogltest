@@ -90,7 +90,9 @@ public class Main : MonoBehaviour {
 	}
     void addGrid(Vector2 at ) {
         GameObject prefab = Resources.Load<GameObject>( "Cube" ) as GameObject;
-        Instantiate( prefab, new Vector3(at.x,at.y,m_z), Quaternion.identity );
+        GameObject o = Instantiate( prefab, new Vector3(at.x,at.y,m_z), Quaternion.identity ) as GameObject;
         m_z-=0.01f;
+        Grid g = o.GetComponent<Grid>();
+        g.Poo(2);
     }
 }

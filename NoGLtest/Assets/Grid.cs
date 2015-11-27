@@ -2,7 +2,6 @@
 using System.Collections;
 
 public class Grid : MonoBehaviour {
-
 	// Use this for initialization
 	void Start () {
         makeGrid();
@@ -77,5 +76,7 @@ public class Grid : MonoBehaviour {
         mesh.triangles = triangles;
         mesh.RecalculateNormals();
     }
-    
+    public void Poo(int p) {
+        Debug.Log("PPPPP:"+p);
+    }
 }
