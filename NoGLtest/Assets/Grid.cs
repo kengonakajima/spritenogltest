@@ -52,7 +52,7 @@ public class Grid : MonoBehaviour {
                 int vi = triangle_ind * 4;
                 int ti = triangle_ind * 6;
                 float dx = x * cellsz, dy = y * cellsz;
-                Debug.Log("i:"+triangle_ind+ "dx:"+dx+"dy:"+dy);
+                //                Debug.Log("i:"+triangle_ind+ "dx:"+dx+"dy:"+dy);
                 vertices[vi+0] = new Vector3( lb.x + dx, lb.y + dy,0); // A
                 vertices[vi+1] = new Vector3( lb.x + dx, lb.y + dy + cellsz, 0); // B
                 vertices[vi+2] = new Vector3( lb.x + dx + cellsz, lb.y + dy + cellsz, 0); // C
