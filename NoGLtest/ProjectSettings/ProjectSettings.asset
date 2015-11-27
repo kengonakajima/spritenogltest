@@ -10,7 +10,7 @@ PlayerSettings:
   targetResolution: 0
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
+  companyName: fluidtest
   productName: NoGLtest
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
@@ -85,7 +85,7 @@ PlayerSettings:
     16:10: 1
     16:9: 1
     Others: 1
-  bundleIdentifier: com.Company.ProductName
+  bundleIdentifier: com.fluidtest.NoGLtest
   bundleVersion: 1.0
   preloadedAssets: []
   metroEnableIndependentInputSource: 0
@@ -161,7 +161,13 @@ PlayerSettings:
     banner: {fileID: 0}
   androidGamepadSupportLevel: 0
   resolutionDialogBanner: {fileID: 0}
-  m_BuildTargetIcons: []
+  m_BuildTargetIcons:
+  - m_BuildTarget: 
+    m_Icons:
+    - serializedVersion: 2
+      m_Icon: {fileID: 0}
+      m_Width: 128
+      m_Height: 128
   m_BuildTargetBatching: []
   m_BuildTargetGraphicsAPIs: []
   webPlayerTemplate: APPLICATION:Default
@@ -456,9 +462,9 @@ PlayerSettings:
   WebGL::exceptionSupport: 1
   WebGL::memorySize: 256
   WebPlayer::ScriptingBackend: 0
-  iOS::Architecture: 2
+  iOS::Architecture: 0
   iOS::EnableIncrementalBuildSupportForIl2cpp: 1
-  iOS::ScriptingBackend: 1
+  iOS::ScriptingBackend: 0
   boolPropertyNames:
   - WebGL::analyzeBuildSize
   - WebGL::dataCaching
