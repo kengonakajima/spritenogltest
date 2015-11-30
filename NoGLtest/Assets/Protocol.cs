@@ -14,18 +14,30 @@ public class Protocol : MonoBehaviour {
         m_ms = new MemoryStream();
         setupClient();
     }
+    void shiftMemoryStream(MemoryStream ms, int shiftsize ) {
+        byte[] buf = ms.GetBuffer();
+        //        Debug.Log( "shiftsize:" + shiftsize + " msl:" + ms.Length );
+        Buffer.BlockCopy( buf, shiftsize, buf, 0, (int)ms.Length - shiftsize );
+        ms.SetLength( ms.Length - shiftsize );
+    }
     void parseStream( MemoryStream ms ) {
         byte[] b = ms.GetBuffer();
-        Debug.Log( "blen:" + b.Length );
+        int total_len = (int)ms.Length;
+        if( b.Length >= 2+2 ) { // record_len + funcid_len
+            ushort record_len = BitConverter.ToUInt16( b, 0 );
+            if( record_len >= 2 && total_len >= record_len ) {
+                ushort funcid = BitConverter.ToUInt16( b, 2 );
+                Debug.Log( "record found! len:" + record_len + " fid:" + funcid );
+                shiftMemoryStream(ms,record_len+2);
+            }
+        }
     }
     private void readCallback(IAsyncResult ar ) {
         int bytes = m_stream.EndRead(ar);
-        Debug.Log("readCallback:"+bytes);
         try {
             m_ms.Write( m_readbuf, 0, bytes );
-            Debug.Log( "ms:" + m_ms.Position );
+            //            Debug.Log("readCallback: input bytes:" + bytes + " msl:" + m_ms.Length );
             parseStream(m_ms);
-            Debug.Log( "ms after read:" + m_ms.Position );            
         } catch( Exception e ) {
             Debug.Log(e);            
         }
