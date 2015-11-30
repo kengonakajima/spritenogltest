@@ -22,3 +22,6 @@ sysinfo.txt
 
 .DS_Store
 aout.app
+
+*.app
+iostest
