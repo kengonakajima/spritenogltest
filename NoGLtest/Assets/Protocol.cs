@@ -52,10 +52,12 @@ public class Protocol : MonoBehaviour {
     MemoryStream m_ms;
     byte[] m_readbuf;
     Storage m_storage;
+    Pool<Image> m_image_pool;
     void Start () {
         m_storage = new Storage();        
         m_readbuf = new byte[1024*16];
         m_ms = new MemoryStream();
+        m_image_pool = new Pool<Image>();
         setupClient();
     }
     
@@ -105,6 +107,10 @@ public class Protocol : MonoBehaviour {
         case PACKETTYPE.R2C_TEXTURE_CREATE:
         case PACKETTYPE.R2C_TEXTURE_IMAGE:
         case PACKETTYPE.R2C_IMAGE_CREATE:
+            uint img_id = BitConverter.ToUInt32(argbuf,0);
+            m_image_pool.ensure(img_id);
+            Debug.Log( "received img_create:" + img_id);
+            break;
         case PACKETTYPE.R2C_IMAGE_LOAD_PNG:
     
         case PACKETTYPE.R2C_TILEDECK_CREATE:
