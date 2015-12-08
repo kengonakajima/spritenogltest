@@ -107,12 +107,25 @@ public class Protocol : MonoBehaviour {
         case PACKETTYPE.R2C_TEXTURE_CREATE:
         case PACKETTYPE.R2C_TEXTURE_IMAGE:
         case PACKETTYPE.R2C_IMAGE_CREATE:
-            uint img_id = BitConverter.ToUInt32(argbuf,0);
-            m_image_pool.ensure(img_id);
-            Debug.Log( "received img_create:" + img_id);
-            break;
+            {
+                uint img_id = BitConverter.ToUInt32(argbuf,0);
+                m_image_pool.ensure(img_id);
+                Debug.Log( "received img_create:" + img_id);
+                break;
+            }
         case PACKETTYPE.R2C_IMAGE_LOAD_PNG:
-    
+            {
+                uint img_id = BitConverter.ToUInt32(argbuf,0);
+                int pathlen = (int)argbuf[4];
+                string path = Util.getASCIIString( argbuf,4+1,pathlen);
+                FileEntry fe = m_storage.findFileEntry(path);
+                Image img = m_image_pool.get(img_id);            
+                if(fe != null && img != null ) {
+                    img.loadPNGMem( fe.getBody() );
+                    Debug.Log( "received imgloadpng:" + img_id + " path:" + path );
+                }
+                break;
+            }
         case PACKETTYPE.R2C_TILEDECK_CREATE:
         case PACKETTYPE.R2C_TILEDECK_TEXTURE:
         case PACKETTYPE.R2C_TILEDECK_SIZE:
@@ -121,13 +134,15 @@ public class Protocol : MonoBehaviour {
         case PACKETTYPE.R2C_GRID_INDEX:
             break;
         case PACKETTYPE.R2C_FILE:
-            int pathlen = (int) argbuf[0];
-            string path = System.Text.Encoding.ASCII.GetString(Util.slice(argbuf,1,pathlen));
-            ushort datalen = BitConverter.ToUInt16(argbuf,1+pathlen);
-            byte[] data = Util.slice(argbuf,1+pathlen+2,datalen);
-            Debug.Log("received FILE. pathlen:" + pathlen + " path:" + path + "datalen:" + datalen );
-            m_storage.ensureFileEntry(path,data);
-            break;
+            {
+                int pathlen = (int) argbuf[0];
+                string path = Util.getASCIIString(argbuf,1,pathlen); 
+                ushort datalen = BitConverter.ToUInt16(argbuf,1+pathlen);
+                byte[] data = Util.slice(argbuf,1+pathlen+2,datalen);
+                Debug.Log("received FILE. pathlen:" + pathlen + " path:" + path + "datalen:" + datalen );
+                m_storage.ensureFileEntry(path,data);
+                break;
+            }
         case PACKETTYPE.ERROR:
             break;
         }
@@ -137,14 +152,17 @@ public class Protocol : MonoBehaviour {
         try {
             m_ms.Write( m_readbuf, 0, bytes );
             //            Debug.Log("readCallback: input bytes:" + bytes + " msl:" + m_ms.Length );
-            parseStream(m_ms);
         } catch( Exception e ) {
             Debug.Log(e);            
         }
         m_stream.BeginRead( m_readbuf, 0, m_readbuf.Length, new AsyncCallback(readCallback), null );
     }
     void Update () {
-
+        try {
+            parseStream(m_ms);
+        } catch( Exception e ) {
+            Debug.Log(e);
+        }
     } 
     void setupClient() {
         try {

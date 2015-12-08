@@ -14,6 +14,9 @@ public class FileEntry {
     public bool equalPath( string path ) {
         return ( m_path.Equals(path) );
     }
+    public byte[] getBody() {
+        return m_body;
+    }
 };
 
 public class Storage {

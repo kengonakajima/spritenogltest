@@ -9,6 +9,10 @@ public class Util {
         Array.Copy( src, ofs, dest, 0, len );
         return dest;
     }
+    public static string getASCIIString( byte[] src, int ofs, int len ) {
+        string s = System.Text.Encoding.ASCII.GetString( slice(src,ofs,len) );
+        return s;
+    }
 }
 
 
