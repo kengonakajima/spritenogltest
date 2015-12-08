@@ -24,3 +24,20 @@ public class Texture {
         m_img = img;
     }
 };
+public class TileDeck {
+    public uint id;
+    public uint cell_width, cell_height;
+    public uint tile_width, tile_height;
+    Texture m_tex;
+    public TileDeck() {
+    }
+    public void setTexture( Texture tex ) {
+        m_tex = tex;
+    }
+    public void setSize( uint sprw, uint sprh, uint cellw, uint cellh ) {
+        tile_width = sprw;
+        tile_height = sprh;
+        cell_width = cellw;
+        cell_height = cellh;
+    }
+};

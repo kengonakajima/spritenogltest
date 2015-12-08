@@ -54,12 +54,14 @@ public class Protocol : MonoBehaviour {
     Storage m_storage;
     Pool<Image> m_image_pool;
     Pool<Texture> m_texture_pool;
+    Pool<TileDeck> m_tiledeck_pool;
     void Start () {
         m_storage = new Storage();        
         m_readbuf = new byte[1024*16];
         m_ms = new MemoryStream();
         m_image_pool = new Pool<Image>();
         m_texture_pool = new Pool<Texture>();
+        m_tiledeck_pool = new Pool<TileDeck>();
         setupClient();
     }
     
@@ -105,12 +107,13 @@ public class Protocol : MonoBehaviour {
         case PACKETTYPE.R2C_VIEWPORT_SCALE:
         case PACKETTYPE.R2C_CAMERA_CREATE:
         case PACKETTYPE.R2C_CAMERA_LOC:
-
+            Debug.Log("funcid:" + funcid );
+            break;
         case PACKETTYPE.R2C_TEXTURE_CREATE:
             {
                 uint tex_id = BitConverter.ToUInt32(argbuf,0);
                 m_texture_pool.ensure(tex_id);
-                Debug.Log( "received texcreate:" + tex_id );
+                Debug.Log( "received tex_create:" + tex_id );
                 break;
             }
         case PACKETTYPE.R2C_TEXTURE_IMAGE:
@@ -146,8 +149,39 @@ public class Protocol : MonoBehaviour {
                 break;
             }
         case PACKETTYPE.R2C_TILEDECK_CREATE:
+            {
+                uint dk_id = BitConverter.ToUInt32(argbuf,0);
+                m_tiledeck_pool.ensure(dk_id);
+                Debug.Log( "received tdk_create. id:" + dk_id );
+                break;
+            }
         case PACKETTYPE.R2C_TILEDECK_TEXTURE:
+            {
+                uint dk_id = BitConverter.ToUInt32(argbuf,0);
+                uint tex_id = BitConverter.ToUInt32(argbuf,4);
+                TileDeck dk = m_tiledeck_pool.get(dk_id);
+                Texture tex = m_texture_pool.get(tex_id);
+                if( dk != null && tex != null ) {
+                    dk.setTexture(tex);
+                    Debug.Log( "received tdk_tex. dk:" + dk_id + " tex:" + tex_id );
+                }
+                break;
+            }
         case PACKETTYPE.R2C_TILEDECK_SIZE:
+            {
+                uint dk_id = BitConverter.ToUInt32(argbuf,0);
+                uint sprw = BitConverter.ToUInt32(argbuf,4);
+                uint sprh = BitConverter.ToUInt32(argbuf,8);
+                uint cellw = BitConverter.ToUInt32(argbuf,12);
+                uint cellh = BitConverter.ToUInt32(argbuf,16);
+                TileDeck dk = m_tiledeck_pool.get(dk_id);
+                if(dk != null) {
+                    dk.setSize( sprw, sprh, cellw, cellh );
+                    Debug.Log( "received tdk_size. id:" + dk_id + " spr:" + sprw + "," + sprh + " cell:" + cellw + "," + cellh );
+                }
+                break;
+            }
+            
         case PACKETTYPE.R2C_GRID_CREATE_SNAPSHOT:
         case PACKETTYPE.R2C_GRID_TABLE_SNAPSHOT: 
         case PACKETTYPE.R2C_GRID_INDEX:
