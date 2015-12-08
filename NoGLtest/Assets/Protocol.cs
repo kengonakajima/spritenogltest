@@ -53,11 +53,13 @@ public class Protocol : MonoBehaviour {
     byte[] m_readbuf;
     Storage m_storage;
     Pool<Image> m_image_pool;
+    Pool<Texture> m_texture_pool;
     void Start () {
         m_storage = new Storage();        
         m_readbuf = new byte[1024*16];
         m_ms = new MemoryStream();
         m_image_pool = new Pool<Image>();
+        m_texture_pool = new Pool<Texture>();
         setupClient();
     }
     
@@ -74,7 +76,7 @@ public class Protocol : MonoBehaviour {
             ushort record_len = BitConverter.ToUInt16( b, 0 );
             if( record_len >= 2 && total_len >= record_len ) {
                 ushort funcid = BitConverter.ToUInt16( b, 2 );
-                Debug.Log( "record found! len:" + record_len + " fid:" + funcid );
+                //                Debug.Log( "record found! len:" + record_len + " fid:" + funcid );
                 byte[] argbuf = new byte[record_len-2];
                 Buffer.BlockCopy( b, 4, argbuf, 0, record_len-2);
                 onRemoteFunction( funcid, argbuf );
@@ -105,7 +107,24 @@ public class Protocol : MonoBehaviour {
         case PACKETTYPE.R2C_CAMERA_LOC:
 
         case PACKETTYPE.R2C_TEXTURE_CREATE:
+            {
+                uint tex_id = BitConverter.ToUInt32(argbuf,0);
+                m_texture_pool.ensure(tex_id);
+                Debug.Log( "received texcreate:" + tex_id );
+                break;
+            }
         case PACKETTYPE.R2C_TEXTURE_IMAGE:
+            {
+                uint tex_id = BitConverter.ToUInt32(argbuf,0);
+                uint img_id = BitConverter.ToUInt32(argbuf,4);
+                Texture tex = m_texture_pool.get(tex_id);
+                Image img = m_image_pool.get(img_id);
+                if( tex != null && img != null ) {
+                    tex.setImage(img);
+                    print("received tex_image. tex:" + tex_id + " img:" + img_id );
+                }
+                break;                
+            }
         case PACKETTYPE.R2C_IMAGE_CREATE:
             {
                 uint img_id = BitConverter.ToUInt32(argbuf,0);
@@ -132,6 +151,7 @@ public class Protocol : MonoBehaviour {
         case PACKETTYPE.R2C_GRID_CREATE_SNAPSHOT:
         case PACKETTYPE.R2C_GRID_TABLE_SNAPSHOT: 
         case PACKETTYPE.R2C_GRID_INDEX:
+            Debug.Log( "funcid:" + funcid );                        
             break;
         case PACKETTYPE.R2C_FILE:
             {
@@ -144,6 +164,7 @@ public class Protocol : MonoBehaviour {
                 break;
             }
         case PACKETTYPE.ERROR:
+            Debug.Log( "ERROR! funcid:" + funcid );                        
             break;
         }
     }
