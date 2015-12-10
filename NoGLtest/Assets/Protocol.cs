@@ -43,7 +43,20 @@ enum PACKETTYPE {
     ERROR = 2000, // 何らかのエラー。エラー番号を返す
 };
 
-
+public class PacketGridCreateSnapshot {
+    public uint id;
+    public ushort width;
+    public ushort height;
+    public uint tiledeck_id;
+    public float enfat_epsilon;
+    public void fromBytes( byte[] buf ) {
+        id = BitConverter.ToUInt32(buf,0);
+        width = BitConverter.ToUInt16(buf,4);
+        height = BitConverter.ToUInt16(buf,6);
+        tiledeck_id = BitConverter.ToUInt32(buf,8);
+        enfat_epsilon = BitConverter.ToSingle(buf,12);
+    }
+};
 
 
 public class Protocol : MonoBehaviour {
@@ -52,16 +65,24 @@ public class Protocol : MonoBehaviour {
     MemoryStream m_ms;
     byte[] m_readbuf;
     Storage m_storage;
-    Pool<Image> m_image_pool;
-    Pool<Texture> m_texture_pool;
-    Pool<TileDeck> m_tiledeck_pool;
+    Pool<HM.Image> m_image_pool;
+    Pool<HM.Texture> m_texture_pool;
+    Pool<HM.TileDeck> m_tiledeck_pool;
+    Pool<HM.Viewport> m_viewport_pool;
+    Pool<HM.Camera> m_camera_pool;
+    Pool<HM.Layer> m_layer_pool;
+    Pool<HM.Grid> m_grid_pool;
     void Start () {
         m_storage = new Storage();        
         m_readbuf = new byte[1024*16];
         m_ms = new MemoryStream();
-        m_image_pool = new Pool<Image>();
-        m_texture_pool = new Pool<Texture>();
-        m_tiledeck_pool = new Pool<TileDeck>();
+        m_image_pool = new Pool<HM.Image>();
+        m_texture_pool = new Pool<HM.Texture>();
+        m_tiledeck_pool = new Pool<HM.TileDeck>();
+        m_viewport_pool = new Pool<HM.Viewport>();
+        m_camera_pool = new Pool<HM.Camera>();
+        m_layer_pool = new Pool<HM.Layer>();
+        m_grid_pool = new Pool<HM.Grid>();
         setupClient();
     }
     
@@ -100,15 +121,86 @@ public class Protocol : MonoBehaviour {
         case PACKETTYPE.R2C_PROP2D_DELETE:
 
         case PACKETTYPE.R2C_LAYER_CREATE:
+            {
+                uint layer_id = BitConverter.ToUInt32(argbuf,0);
+                m_layer_pool.ensure(layer_id);
+                Debug.Log("received layer_create. " + layer_id );
+                break;
+            }            
         case PACKETTYPE.R2C_LAYER_VIEWPORT:
+            {
+                uint layer_id = BitConverter.ToUInt32(argbuf,0);
+                uint vp_id = BitConverter.ToUInt32(argbuf,4);
+                HM.Layer l = m_layer_pool.get(layer_id);
+                HM.Viewport vp = m_viewport_pool.get(vp_id);
+                if(l!=null && vp!=null) {
+                    l.setViewport(vp);
+                    Debug.Log("received layer_vp l:" + layer_id + " vp:" + vp_id );
+                }
+                break;
+            }
         case PACKETTYPE.R2C_LAYER_CAMERA:
+            {
+                uint layer_id = BitConverter.ToUInt32(argbuf,0);
+                uint camera_id = BitConverter.ToUInt32(argbuf,4);
+                HM.Layer l = m_layer_pool.get(layer_id);
+                HM.Camera cam = m_camera_pool.get(camera_id);
+                if(l!=null && cam!=null) {
+                    l.setCamera(cam);
+                    Debug.Log("received layer_camera. l:" + layer_id + " cam:" + camera_id );
+                }
+                break;
+            }
         case PACKETTYPE.R2C_VIEWPORT_CREATE:
+            {
+                uint vp_id = BitConverter.ToUInt32(argbuf,0);
+                m_viewport_pool.ensure(vp_id);
+                Debug.Log("received vp_create:" + vp_id );
+                break;
+            }
         case PACKETTYPE.R2C_VIEWPORT_SIZE:
+            {
+                uint vp_id = BitConverter.ToUInt32(argbuf,0);
+                HM.Viewport vp = m_viewport_pool.get(vp_id);
+                if(vp!=null) {
+                    uint w = BitConverter.ToUInt32(argbuf,4);
+                    uint h = BitConverter.ToUInt32(argbuf,8);
+                    vp.setSize(w,h);
+                    Debug.Log("received vp_size. id:" + vp_id + " " + w + "," + h );
+                }
+                break;
+            }
         case PACKETTYPE.R2C_VIEWPORT_SCALE:
+            {
+                uint vp_id = BitConverter.ToUInt32(argbuf,0);
+                HM.Viewport vp = m_viewport_pool.get(vp_id);
+                if(vp!=null) {
+                    float sclx = BitConverter.ToSingle(argbuf,4);
+                    float scly = BitConverter.ToSingle(argbuf,8);
+                    vp.setScale2D(sclx,scly);
+                    Debug.Log("received vp_scale. id:" + vp_id + " " + sclx + "," + scly );
+                }
+                break;
+            }            
         case PACKETTYPE.R2C_CAMERA_CREATE:
+            {
+                uint cam_id = BitConverter.ToUInt32(argbuf,0);
+                m_camera_pool.ensure(cam_id);
+                Debug.Log("received cam_create. " + cam_id );
+                break;
+            }
         case PACKETTYPE.R2C_CAMERA_LOC:
-            Debug.Log("funcid:" + funcid );
-            break;
+            {
+                uint cam_id = BitConverter.ToUInt32(argbuf,0);
+                HM.Camera cam = m_camera_pool.get(cam_id);
+                if(cam!=null) {
+                    float x = BitConverter.ToSingle(argbuf,4);
+                    float y = BitConverter.ToSingle(argbuf,8);
+                    cam.setLoc(x,y);
+                    Debug.Log("received cam_loc: " + cam_id + " " + x + "," + y );
+                }
+                break;
+            }            
         case PACKETTYPE.R2C_TEXTURE_CREATE:
             {
                 uint tex_id = BitConverter.ToUInt32(argbuf,0);
@@ -120,8 +212,8 @@ public class Protocol : MonoBehaviour {
             {
                 uint tex_id = BitConverter.ToUInt32(argbuf,0);
                 uint img_id = BitConverter.ToUInt32(argbuf,4);
-                Texture tex = m_texture_pool.get(tex_id);
-                Image img = m_image_pool.get(img_id);
+                HM.Texture tex = m_texture_pool.get(tex_id);
+                HM.Image img = m_image_pool.get(img_id);
                 if( tex != null && img != null ) {
                     tex.setImage(img);
                     print("received tex_image. tex:" + tex_id + " img:" + img_id );
@@ -141,7 +233,7 @@ public class Protocol : MonoBehaviour {
                 int pathlen = (int)argbuf[4];
                 string path = Util.getASCIIString( argbuf,4+1,pathlen);
                 FileEntry fe = m_storage.findFileEntry(path);
-                Image img = m_image_pool.get(img_id);            
+                HM.Image img = m_image_pool.get(img_id);            
                 if(fe != null && img != null ) {
                     img.loadPNGMem( fe.getBody() );
                     Debug.Log( "received imgloadpng:" + img_id + " path:" + path );
@@ -159,8 +251,8 @@ public class Protocol : MonoBehaviour {
             {
                 uint dk_id = BitConverter.ToUInt32(argbuf,0);
                 uint tex_id = BitConverter.ToUInt32(argbuf,4);
-                TileDeck dk = m_tiledeck_pool.get(dk_id);
-                Texture tex = m_texture_pool.get(tex_id);
+                HM.TileDeck dk = m_tiledeck_pool.get(dk_id);
+                HM.Texture tex = m_texture_pool.get(tex_id);
                 if( dk != null && tex != null ) {
                     dk.setTexture(tex);
                     Debug.Log( "received tdk_tex. dk:" + dk_id + " tex:" + tex_id );
@@ -174,7 +266,7 @@ public class Protocol : MonoBehaviour {
                 uint sprh = BitConverter.ToUInt32(argbuf,8);
                 uint cellw = BitConverter.ToUInt32(argbuf,12);
                 uint cellh = BitConverter.ToUInt32(argbuf,16);
-                TileDeck dk = m_tiledeck_pool.get(dk_id);
+                HM.TileDeck dk = m_tiledeck_pool.get(dk_id);
                 if(dk != null) {
                     dk.setSize( sprw, sprh, cellw, cellh );
                     Debug.Log( "received tdk_size. id:" + dk_id + " spr:" + sprw + "," + sprh + " cell:" + cellw + "," + cellh );
@@ -183,9 +275,36 @@ public class Protocol : MonoBehaviour {
             }
             
         case PACKETTYPE.R2C_GRID_CREATE_SNAPSHOT:
-        case PACKETTYPE.R2C_GRID_TABLE_SNAPSHOT: 
+            {
+                PacketGridCreateSnapshot pkt = new PacketGridCreateSnapshot();
+                pkt.fromBytes(argbuf);
+                HM.TileDeck deck = m_tiledeck_pool.get(pkt.tiledeck_id);
+                if(deck!=null) {
+                    HM.Grid g = m_grid_pool.ensure(pkt.id);
+                    g.setSize( pkt.width, pkt.height );
+                    g.tiledeck_id = pkt.tiledeck_id;
+                    g.deck = deck;
+                    g.enfat_epsilon = pkt.enfat_epsilon;
+                    Debug.Log("received gr-cr-ss id:" + pkt.id + " wh:" + pkt.width + "," + pkt.height );
+                } else {
+                    Debug.LogWarning("grid_create_ss: tiledeck not found:" + pkt.tiledeck_id );
+                }
+                break;
+            }
+        case PACKETTYPE.R2C_GRID_TABLE_SNAPSHOT:
+            {
+                uint grid_id = BitConverter.ToUInt32(argbuf,0);
+                uint nbytes = BitConverter.ToUInt32(argbuf,4);
+                HM.Grid g = m_grid_pool.get(grid_id);
+                if(g!=null) {
+                    if(nbytes == g.getIndexTableSize() ) {
+                        g.bulkSetIndex(argbuf,8);
+                    }
+                }
+                break;
+            }
         case PACKETTYPE.R2C_GRID_INDEX:
-            Debug.Log( "funcid:" + funcid );                        
+            Debug.LogWarning( "funcid:" + funcid );                        
             break;
         case PACKETTYPE.R2C_FILE:
             {
@@ -198,7 +317,7 @@ public class Protocol : MonoBehaviour {
                 break;
             }
         case PACKETTYPE.ERROR:
-            Debug.Log( "ERROR! funcid:" + funcid );                        
+            Debug.LogWarning( "func ERROR! funcid:" + funcid );                        
             break;
         }
     }
