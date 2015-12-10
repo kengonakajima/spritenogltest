@@ -57,6 +57,54 @@ public class PacketGridCreateSnapshot {
         enfat_epsilon = BitConverter.ToSingle(buf,12);
     }
 };
+public class PacketVec2 {
+    public float x,y;
+    public void fromBytes( byte[] buf, int ofs ) {
+        x = BitConverter.ToSingle(buf,ofs+0);
+        y = BitConverter.ToSingle(buf,ofs+4);
+    }
+};
+public class PacketColor {
+    public float r,g,b,a;
+    public void fromBytes( byte[] buf, int ofs ) {
+        r = BitConverter.ToSingle(buf,ofs+0);
+        g = BitConverter.ToSingle(buf,ofs+4);
+        b = BitConverter.ToSingle(buf,ofs+4);
+        a = BitConverter.ToSingle(buf,ofs+4);
+    }        
+};
+public class PacketProp2DCreateSnapshot {
+    public uint prop_id; // non-zero
+    public uint layer_id; // non-zero
+    public PacketVec2 loc;
+    public PacketVec2 scl;
+    public int index;
+    public uint tiledeck_id; // non-zero
+    public uint grid_id; // 0 for nothing
+    public int debug;
+    public float rot;
+    public uint xflip; // TODO:smaller size
+    public uint yflip;
+    public PacketColor color;
+    public void fromBytes( byte[] buf ) {
+        prop_id = BitConverter.ToUInt32(buf,0);
+        layer_id = BitConverter.ToUInt32(buf,4);
+        loc = new PacketVec2();
+        loc.fromBytes(buf,8);
+        scl = new PacketVec2();
+        scl.fromBytes(buf,16);
+        index = BitConverter.ToInt32(buf,24);
+        tiledeck_id = BitConverter.ToUInt32(buf,28);
+        grid_id = BitConverter.ToUInt32(buf,32);
+        debug = BitConverter.ToInt32(buf,36);
+        rot = BitConverter.ToSingle(buf,40);
+        xflip = BitConverter.ToUInt32(buf,44);
+        yflip = BitConverter.ToUInt32(buf,48);
+        color = new PacketColor();
+        color.fromBytes(buf,52);
+    }
+};
+
 
 
 public class Protocol : MonoBehaviour {
@@ -72,6 +120,7 @@ public class Protocol : MonoBehaviour {
     Pool<HM.Camera> m_camera_pool;
     Pool<HM.Layer> m_layer_pool;
     Pool<HM.Grid> m_grid_pool;
+    Pool<HM.Prop2D> m_prop2d_pool;
     void Start () {
         m_storage = new Storage();        
         m_readbuf = new byte[1024*16];
@@ -83,6 +132,7 @@ public class Protocol : MonoBehaviour {
         m_camera_pool = new Pool<HM.Camera>();
         m_layer_pool = new Pool<HM.Layer>();
         m_grid_pool = new Pool<HM.Grid>();
+        m_prop2d_pool = new Pool<HM.Prop2D>();
         setupClient();
     }
     
@@ -110,17 +160,133 @@ public class Protocol : MonoBehaviour {
     private void onRemoteFunction( ushort funcid, byte[] argbuf ) {
         switch( (PACKETTYPE)funcid) {
         case PACKETTYPE.R2C_PROP2D_CREATE_SNAPSHOT:
+            {
+                PacketProp2DCreateSnapshot pkt = new PacketProp2DCreateSnapshot();
+                pkt.fromBytes(argbuf);
+                HM.Layer layer = m_layer_pool.get(pkt.layer_id);
+                HM.TileDeck deck = m_tiledeck_pool.get(pkt.tiledeck_id);
+                if( layer!=null && deck!=null) {
+                    HM.Prop2D prop = m_prop2d_pool.get(pkt.prop_id);
+                    if(prop==null) {
+                        prop = m_prop2d_pool.ensure(pkt.prop_id);
+                        layer.insertProp(prop);
+                    }
+                    prop.setDeck(deck);
+                    prop.setIndex(pkt.index);
+                    prop.setScl(pkt.scl.x, pkt.scl.y);
+                    prop.setLoc(pkt.loc.x, pkt.loc.y);
+                    prop.setRot(pkt.rot);
+                    prop.setXFlip( pkt.xflip != 0 );
+                    prop.setYFlip( pkt.yflip != 0 );
+                    prop.setColor(pkt.color.r,pkt.color.g,pkt.color.b,pkt.color.a);
+                }
+                
+                break;
+            }
         case PACKETTYPE.R2C_PROP2D_LOC:
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                float x = BitConverter.ToSingle(argbuf,4);
+                float y = BitConverter.ToSingle(argbuf,8);
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                if(prop!=null) {
+                    prop.setLoc(x,y);
+                    Debug.Log( "received prop2d_loc. id:" + prop_id );
+                }
+                break;
+            }
         case PACKETTYPE.R2C_PROP2D_GRID:
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                uint grid_id = BitConverter.ToUInt32(argbuf,4);
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                HM.Grid grid = m_grid_pool.get(grid_id);
+                if(prop!=null && grid!=null) {
+                    prop.setGrid(grid);
+                    Debug.Log("received prop2d_grid. p:" + prop_id + " g:" + grid_id );
+                }
+                break;
+            }
         case PACKETTYPE.R2C_PROP2D_INDEX:
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                int ind = BitConverter.ToInt32(argbuf,4);
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                if(prop!=null){
+                    prop.setIndex(ind);
+                    Debug.Log("received p2d_ind. p:" + prop_id + " ind:" + ind );
+                }
+                break;
+            }
         case PACKETTYPE.R2C_PROP2D_SCALE:
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                float sx = BitConverter.ToSingle(argbuf,4);
+                float sy = BitConverter.ToSingle(argbuf,8);
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                if(prop!=null) {
+                    prop.setScl(sx,sy);
+                    Debug.Log( "received prop2d_scl. id:" + prop_id );
+                }
+                break;
+            }            
         case PACKETTYPE.R2C_PROP2D_ROT:
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                float rot = BitConverter.ToSingle(argbuf,4);
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                if(prop!=null) {
+                    prop.setRot(rot);
+                    Debug.Log( "received prop2d_rot. id:" + prop_id );
+                }
+                break;
+            }                        
         case PACKETTYPE.R2C_PROP2D_XFLIP:
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                int xfl = BitConverter.ToInt32(argbuf,4);
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                if(prop!=null) {
+                    prop.setXFlip(xfl!=0);
+                    Debug.Log( "received prop2d_xfl. id:" + prop_id );
+                }
+                break;
+            }                                    
         case PACKETTYPE.R2C_PROP2D_YFLIP:
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                int yfl = BitConverter.ToInt32(argbuf,4);
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                if(prop!=null) {
+                    prop.setYFlip(yfl!=0);
+                    Debug.Log( "received prop2d_yfl. id:" + prop_id );
+                }
+                break;
+            }                                                
         case PACKETTYPE.R2C_PROP2D_COLOR:
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                float r = BitConverter.ToSingle(argbuf,4);
+                float g = BitConverter.ToSingle(argbuf,8);
+                float b = BitConverter.ToSingle(argbuf,12);
+                float a = BitConverter.ToSingle(argbuf,16);                
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                if(prop!=null) {
+                    prop.setColor(r,g,b,a);
+                    Debug.Log( "received prop2d_col. id:" + prop_id );
+                }                
+                break;
+            }
         case PACKETTYPE.R2C_PROP2D_DELETE:
-            Debug.LogWarning("funcid:" + funcid);
-            break;
+            {
+                uint prop_id = BitConverter.ToUInt32(argbuf,0);
+                HM.Prop2D prop = m_prop2d_pool.get(prop_id);
+                if(prop!=null) {
+                    prop.setToClean(true);
+                    Debug.Log("received prop2d_del. id:" + prop_id );
+                }
+                break;
+            }            
         case PACKETTYPE.R2C_LAYER_CREATE:
             {
                 uint layer_id = BitConverter.ToUInt32(argbuf,0);

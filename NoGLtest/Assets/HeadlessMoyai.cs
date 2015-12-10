@@ -59,9 +59,17 @@ namespace HM {
         public uint id;
         Viewport viewport;
         Camera camera;
+        ArrayList props;
+
+        public Layer() {
+            props = new ArrayList();
+        }
         public void setViewport(Viewport vp) { viewport = vp; }
         public void setCamera(Camera cam) { camera = cam; }
-    
+        public void insertProp( Prop2D prop ) {
+            props.Add(prop);
+            Debug.Log("insertProp: cnt:" + props.Count );
+        }
     };
     public class Color {
         public float r,g,b,a;
@@ -97,5 +105,35 @@ namespace HM {
                 }
             }
         }
+    };
+    public class Prop2D {
+        public uint id;
+        public TileDeck deck;
+        public int index;
+        public Vector2 scl;
+        public Vector2 loc;
+        public float rot;
+        public bool xflip;
+        public bool yflip;
+        public Color color;
+        public Grid grid;
+        public bool to_clean;
+        
+        public Prop2D() {
+            color = new Color();
+            to_clean = false;
+        }
+        public void setDeck(TileDeck dk) { deck = dk; }
+        public void setIndex(int ind) { index = ind; }
+        public void setScl( float xs, float ys ) { scl.x = xs; scl.y = ys; }
+        public void setLoc( float x, float y ) { loc.x = x; loc.y = y; }
+        public void setRot( float r ) { rot = r; }
+        public void setXFlip( bool xf ) { xflip = xf; }
+        public void setYFlip( bool yf ) { yflip = yf; }
+        public void setColor( float r, float g, float b, float a ) {
+            color.r = r; color.g = g; color.b = b; color.a = a;
+        }
+        public void setGrid( Grid g ) { grid = g; }
+        public void setToClean(bool flag) { to_clean = flag; }
     };
 };
