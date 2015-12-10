@@ -119,7 +119,8 @@ public class Protocol : MonoBehaviour {
         case PACKETTYPE.R2C_PROP2D_YFLIP:
         case PACKETTYPE.R2C_PROP2D_COLOR:
         case PACKETTYPE.R2C_PROP2D_DELETE:
-
+            Debug.LogWarning("funcid:" + funcid);
+            break;
         case PACKETTYPE.R2C_LAYER_CREATE:
             {
                 uint layer_id = BitConverter.ToUInt32(argbuf,0);
@@ -299,13 +300,25 @@ public class Protocol : MonoBehaviour {
                 if(g!=null) {
                     if(nbytes == g.getIndexTableSize() ) {
                         g.bulkSetIndex(argbuf,8);
+                        Debug.Log("received grid_table_ss id:" + grid_id );
                     }
                 }
                 break;
             }
         case PACKETTYPE.R2C_GRID_INDEX:
-            Debug.LogWarning( "funcid:" + funcid );                        
-            break;
+            {
+                uint grid_id = BitConverter.ToUInt32(argbuf,0);
+                uint x = BitConverter.ToUInt32(argbuf,4);
+                uint y = BitConverter.ToUInt32(argbuf,8);
+                int ind = BitConverter.ToInt32(argbuf,12);
+                HM.Grid g = m_grid_pool.get(grid_id);
+                if(g!=null) {
+                    g.set(x,y,ind);
+                    Debug.Log("received grid_index id:" + grid_id + " xyi:" + x + "," + y + "," + ind );
+                }
+                    
+                break;
+            }
         case PACKETTYPE.R2C_FILE:
             {
                 int pathlen = (int) argbuf[0];
