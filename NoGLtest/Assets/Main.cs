@@ -30,7 +30,8 @@ public class Main : MonoBehaviour {
         }
         m_memtex.Apply();
 	}
-	
+
+    
 	// Update is called once per frame
 	void Update () {
         bool j = Input.GetMouseButtonDown(0);
@@ -49,6 +50,11 @@ public class Main : MonoBehaviour {
             cur_num+=100;
         }
 
+        if( Input.GetKeyDown("t") ) {
+            //            Vector2 at = new Vector2( 1,1 );
+            //            addSprite(at);
+        }
+            
         float nt = Time.time;
         if( show_fps_at < nt - 1 ) {
             show_fps_at = nt;
@@ -58,7 +64,8 @@ public class Main : MonoBehaviour {
         }
         cur_frame ++;
     }
-    
+
+    // Spriteクラスを使うもの
     void addSprite1( Vector2 at ) {
         Sprite ns = Sprite.Create( m_memtex,
                                    new Rect(0,0,100,100),
@@ -69,10 +76,11 @@ public class Main : MonoBehaviour {
         o.AddComponent<SpriteRenderer>();
         SpriteRenderer sr = o.GetComponent<SpriteRenderer>();
         sr.sprite = ns;
-        //        o.transform.Translate(0,0,m_z);
-        //        o.transform.localScale = new Vector3(1,1,1);
+                o.transform.Translate(0,0,m_z);
+                o.transform.localScale = new Vector3(1,1,1);
         m_z-=0.01f;
     }
+    // tiledeck
     void addSprite2( Vector2 at ) {
         Debug.Log( "at:" + at.x + "," + at.y );
         Sprite ns = Sprite.Create( m_basetex,
@@ -84,15 +92,29 @@ public class Main : MonoBehaviour {
         o.AddComponent<SpriteRenderer>();
         SpriteRenderer sr = o.GetComponent<SpriteRenderer>();
         sr.sprite = ns;
-        //        o.transform.Translate(0,0,m_z);
-        //        o.transform.localScale = new Vector3(1,1,1);
+                o.transform.Translate(0,0,m_z);
+                o.transform.localScale = new Vector3(1,1,1);
         m_z-=0.01f;        
 	}
+    // Grid.csでメッシュを入れ替えている。
+    // そのときzはすべて0にしているので、z値を入れ替えることで、優先順位を制御できる。
+    // 
     void addGrid(Vector2 at ) {
-        GameObject prefab = Resources.Load<GameObject>( "Cube" ) as GameObject;
+        GameObject prefab = Resources.Load<GameObject>( "GridCube" ) as GameObject;
         GameObject o = Instantiate( prefab, new Vector3(at.x,at.y,m_z), Quaternion.identity ) as GameObject;
         m_z-=0.01f;
         Grid g = o.GetComponent<Grid>();
         g.Poo(2);
+    }
+    // Cubeをベースに通常のスプライトを表示.
+    // 1. FileEntryからmaterialを生成する:texture2dがTextureにある。TileDeckにm_texがある。
+    // 2. SpriteCubeをつくり、materialを設定する(setdeck)
+    // 3. setindex
+    void addSprite( Vector2 at ) {
+        GameObject prefab = Resources.Load<GameObject>( "SpriteCube" ) as GameObject;
+        GameObject o = Instantiate( prefab, new Vector3(at.x,at.y,m_z), Quaternion.identity ) as GameObject;
+        m_z-=0.01f;
+        SpriteCube sc = o.GetComponent<SpriteCube>();
+        sc.setVisible(true);
     }
 }
