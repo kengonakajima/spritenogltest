@@ -13,7 +13,11 @@ public class Main : MonoBehaviour {
     int cur_num=0;
 
     float m_z = 0;
-    
+
+    void Awake() {
+        GetComponent<Camera>().orthographicSize = Screen.height / 2;
+        Debug.Log( "Main Awake!" + Screen.height/2 );
+    }
 	// Use this for initialization
 	void Start () {
         m_basetex = Resources.Load<Texture2D>("base") as Texture2D;
@@ -37,7 +41,7 @@ public class Main : MonoBehaviour {
         bool j = Input.GetMouseButtonDown(0);
         if(j) {
             for(int i=0;i<100;i++) {
-                Vector2 at = new Vector2( Random.Range(-3f,3f), Random.Range(-3f,3f) );
+                Vector2 at = new Vector2( Random.Range(-Screen.width/2,Screen.width/2), Random.Range(-Screen.height/2,Screen.height/2) );
                 float r = Random.Range(0f,1f);
                 if( r < 0.3 ) {
                     addSprite1(at);
@@ -51,6 +55,7 @@ public class Main : MonoBehaviour {
         }
 
         if( Input.GetKeyDown("t") ) {
+            Debug.Log("SSSS: " + Screen.width + "," + Screen.height );
             //            Vector2 at = new Vector2( 1,1 );
             //            addSprite(at);
         }
@@ -76,8 +81,8 @@ public class Main : MonoBehaviour {
         o.AddComponent<SpriteRenderer>();
         SpriteRenderer sr = o.GetComponent<SpriteRenderer>();
         sr.sprite = ns;
-                o.transform.Translate(0,0,m_z);
-                o.transform.localScale = new Vector3(1,1,1);
+        o.transform.Translate(0,0,m_z);
+        o.transform.localScale = new Vector3(32,32,1);
         m_z-=0.01f;
     }
     // tiledeck
@@ -92,8 +97,8 @@ public class Main : MonoBehaviour {
         o.AddComponent<SpriteRenderer>();
         SpriteRenderer sr = o.GetComponent<SpriteRenderer>();
         sr.sprite = ns;
-                o.transform.Translate(0,0,m_z);
-                o.transform.localScale = new Vector3(1,1,1);
+        o.transform.Translate(0,0,m_z);
+        o.transform.localScale = new Vector3(32,32,1);
         m_z-=0.01f;        
 	}
     // Grid.csでメッシュを入れ替えている。
@@ -103,6 +108,8 @@ public class Main : MonoBehaviour {
         GameObject prefab = Resources.Load<GameObject>( "GridCube" ) as GameObject;
         GameObject o = Instantiate( prefab, new Vector3(at.x,at.y,m_z), Quaternion.identity ) as GameObject;
         m_z-=0.01f;
+        o.transform.Translate(0,0,m_z);
+        o.transform.localScale = new Vector3(16*4,16*4,1);        
         Grid g = o.GetComponent<Grid>();
         g.Poo(2);
     }
@@ -115,6 +122,6 @@ public class Main : MonoBehaviour {
         GameObject o = Instantiate( prefab, new Vector3(at.x,at.y,m_z), Quaternion.identity ) as GameObject;
         m_z-=0.01f;
         SpriteCube sc = o.GetComponent<SpriteCube>();
-        sc.setVisible(true);
+
     }
 }
