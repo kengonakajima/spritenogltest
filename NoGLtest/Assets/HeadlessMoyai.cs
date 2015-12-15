@@ -14,15 +14,22 @@ namespace HM {
         public void loadPNGMem( byte[] pngbin ) {
             m_tex.LoadImage(pngbin);
         }
+        public Texture2D getTexture2D() { return m_tex; }
     };
     public class Texture {
         public uint id;
         Texture2D m_tex;
         Image m_img;
+        Material m_mat;
         public Texture() {
         }
         public void setImage(Image img) {
             m_img = img;
+            Shader s = Shader.Find("Particles/Alpha Blended");
+            Texture2D tex = m_img.getTexture2D();
+            Debug.Log("new material: shader:" + s + " tex:" + tex );
+            m_mat = new Material(s);
+            m_mat.mainTexture = tex;
         }
     };
     public class TileDeck {
